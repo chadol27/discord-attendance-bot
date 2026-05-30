@@ -55,7 +55,7 @@ async function handleAttendanceCheckCommand(interaction: ChatInputCommandInterac
 
   if (!interaction.guildId) {
     await interaction.reply({
-      embeds: [createNoticeEmbed("출석 기록", "서버에서만 출석 기록을 확인할 수 있어.")],
+      embeds: [createNoticeEmbed("출석 기록", "서버에서만 확인 가능")],
     });
     return;
   }
@@ -65,7 +65,7 @@ async function handleAttendanceCheckCommand(interaction: ChatInputCommandInterac
 
   if (!attendance) {
     await interaction.reply({
-      embeds: [createNoticeEmbed("출석 기록", `<@${targetUser.id}>의 출석 기록이 아직 없어.`)],
+      embeds: [createNoticeEmbed("출석 기록", `<@${targetUser.id}> 출석 기록 없음`)],
     });
     return;
   }

@@ -8,7 +8,7 @@ export function createAttendanceEmbed(record: AttendanceRecord, today: string): 
   const attendanceRate = (record.check_count / attendanceDays) * 100;
 
   return new EmbedBuilder()
-    .setTitle("출석 완료!")
+    .setTitle("출석 완료")
     .setColor(0x2ecc71)
     .addFields(
       { name: "출석 횟수", value: `${record.check_count}회`, inline: true },
