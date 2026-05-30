@@ -1,0 +1,34 @@
+import { Client, Events, GatewayIntentBits } from "discord.js";
+
+import { registerAttendanceEvents } from "./attendance.js";
+import { attendanceCheckCommand } from "./commands.js";
+
+const token = process.env.DISCORD_TOKEN;
+const databasePath = process.env.DB_PATH;
+
+if (!token) {
+  throw new Error("DISCORD_TOKEN is required.");
+}
+
+if (!databasePath) {
+  throw new Error("DB_PATH is required.");
+}
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.MessageContent,
+  ],
+});
+
+client.once(Events.ClientReady, async (readyClient) => {
+  await readyClient.application.commands.set([attendanceCheckCommand]);
+
+  console.log(`Logged in as ${readyClient.user.tag}, ${new Date().toLocaleString()}`);
+});
+
+registerAttendanceEvents(client);
+
+await client.login(token);

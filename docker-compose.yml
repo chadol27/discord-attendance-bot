@@ -1,0 +1,8 @@
+services:
+  discord-attendance:
+    build: .
+    container_name: discord-attendance
+    volumes:
+      - ./database:/database
+    env_file:
+      - .env.production
