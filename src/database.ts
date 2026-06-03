@@ -6,9 +6,29 @@ export type AttendanceRecord = {
   check_start_date: string;
   check_count: number;
   in_a_row: number;
+  score: number;
 };
 
-type AttendanceDatabase = Record<string, Record<string, AttendanceRecord>>;
+type GuildScore = {
+  last_score: number;
+  last_calculate: string;
+};
+
+type GuildAttendance = {
+  score: GuildScore;
+  members: Record<string, AttendanceRecord>;
+};
+
+type AttendanceDatabase = Record<string, GuildAttendance>;
+
+type AttendanceRecordWithoutScore = Omit<AttendanceRecord, "score">;
+
+export type AttendanceScoreResult = {
+  record: AttendanceRecord;
+  awardScore: number;
+  baseScore: number;
+  hasStreakBonus: boolean;
+};
 
 function getRequiredDatabasePath(): string {
   const databasePath = process.env.DB_PATH;
@@ -75,18 +95,66 @@ export async function getAttendance(
 ): Promise<AttendanceRecord | null> {
   const database = await readDatabase();
 
-  return database[guildId]?.[memberId] ?? null;
+  return database[guildId]?.members[memberId] ?? null;
 }
 
-export async function setAttendance(
+function getDefaultGuildAttendance(today: string): GuildAttendance {
+  return {
+    score: {
+      last_score: 0,
+      last_calculate: today,
+    },
+    members: {},
+  };
+}
+
+function calculateBaseScore(score: GuildScore, today: string): number {
+  if (score.last_calculate !== today || score.last_score <= 0) {
+    return 100;
+  }
+
+  return Math.round(score.last_score * 0.9);
+}
+
+function calculateAwardScore(baseScore: number, inARow: number): number {
+  if (inARow < 5) {
+    return baseScore;
+  }
+
+  return Math.round(baseScore * 1.2);
+}
+
+export async function setAttendanceWithScore(
   guildId: string,
   memberId: string,
-  record: AttendanceRecord,
-): Promise<void> {
+  record: AttendanceRecordWithoutScore,
+  today: string,
+): Promise<AttendanceScoreResult> {
   const database = await readDatabase();
 
-  database[guildId] ??= {};
-  database[guildId][memberId] = record;
+  database[guildId] ??= getDefaultGuildAttendance(today);
+
+  const guildAttendance = database[guildId];
+  const baseScore = calculateBaseScore(guildAttendance.score, today);
+  const awardScore = calculateAwardScore(baseScore, record.in_a_row);
+  const previousScore = guildAttendance.members[memberId]?.score ?? 0;
+  const nextRecord = {
+    ...record,
+    score: previousScore + awardScore,
+  };
+
+  guildAttendance.score = {
+    last_score: baseScore,
+    last_calculate: today,
+  };
+  guildAttendance.members[memberId] = nextRecord;
 
   await writeDatabase(database);
+
+  return {
+    record: nextRecord,
+    awardScore,
+    baseScore,
+    hasStreakBonus: record.in_a_row >= 5,
+  };
 }

@@ -1,8 +1,10 @@
 import { type ChatInputCommandInteraction, type Client, Events, type Message } from "discord.js";
 
 import { formatDate, getYesterday } from "./date.js";
-import { getAttendance, setAttendance, type AttendanceRecord } from "./database.js";
+import { getAttendance, setAttendanceWithScore, type AttendanceRecord } from "./database.js";
 import { createAttendanceCheckEmbed, createAttendanceEmbed, createNoticeEmbed } from "./embeds.js";
+
+type AttendanceRecordWithoutScore = Omit<AttendanceRecord, "score">;
 
 export function registerAttendanceEvents(client: Client): void {
   client.on(Events.MessageCreate, handleAttendanceMessage);
@@ -30,10 +32,10 @@ async function handleAttendanceMessage(message: Message): Promise<void> {
     return;
   }
 
-  const nextAttendance: AttendanceRecord = existingAttendance
+  const nextAttendance: AttendanceRecordWithoutScore = existingAttendance
     ? {
-        ...existingAttendance,
         last_check: today,
+        check_start_date: existingAttendance.check_start_date,
         check_count: existingAttendance.check_count + 1,
         in_a_row: existingAttendance.last_check === yesterday ? existingAttendance.in_a_row + 1 : 1,
       }
@@ -44,8 +46,19 @@ async function handleAttendanceMessage(message: Message): Promise<void> {
         in_a_row: 1,
       };
 
-  await setAttendance(guildId, memberId, nextAttendance);
-  await message.reply({ embeds: [createAttendanceEmbed(nextAttendance, today)] });
+  const savedAttendance = await setAttendanceWithScore(guildId, memberId, nextAttendance, today);
+
+  await message.reply({
+    embeds: [
+      createAttendanceEmbed(
+        savedAttendance.record,
+        today,
+        savedAttendance.awardScore,
+        savedAttendance.baseScore,
+        savedAttendance.hasStreakBonus,
+      ),
+    ],
+  });
 }
 
 async function handleAttendanceCheckCommand(interaction: ChatInputCommandInteraction): Promise<void> {

@@ -3,9 +3,16 @@ import { EmbedBuilder } from "discord.js";
 import { getAttendanceDays } from "./date.js";
 import type { AttendanceRecord } from "./database.js";
 
-export function createAttendanceEmbed(record: AttendanceRecord, today: string): EmbedBuilder {
+export function createAttendanceEmbed(
+  record: AttendanceRecord,
+  today: string,
+  awardScore: number,
+  baseScore: number,
+  hasStreakBonus: boolean,
+): EmbedBuilder {
   const attendanceDays = getAttendanceDays(record.check_start_date, today);
   const attendanceRate = (record.check_count / attendanceDays) * 100;
+  const awardScoreText = hasStreakBonus ? `${awardScore}점 (${baseScore}+20%)` : `${awardScore}점`;
 
   return new EmbedBuilder()
     .setTitle("출석 완료")
@@ -14,6 +21,8 @@ export function createAttendanceEmbed(record: AttendanceRecord, today: string): 
       { name: "출석 횟수", value: `${record.check_count}회`, inline: true },
       { name: "출석률", value: `${attendanceRate.toFixed(1)}% (${record.check_count}/${attendanceDays})`, inline: true },
       { name: "연속 출석", value: `${record.in_a_row}일`, inline: true },
+      { name: "획득 점수", value: awardScoreText, inline: true },
+      { name: "누적 점수", value: `${record.score}점`, inline: true },
     );
 }
 
@@ -31,6 +40,7 @@ export function createAttendanceCheckEmbed(record: AttendanceRecord, today: stri
       { name: "출석 횟수", value: `${record.check_count}회`, inline: true },
       { name: "출석률", value: `${attendanceRate.toFixed(1)}% (${record.check_count}/${attendanceDays})`, inline: true },
       { name: "연속 출석", value: `${record.in_a_row}일`, inline: true },
+      { name: "누적 점수", value: `${record.score}점`, inline: true },
     );
 }
 

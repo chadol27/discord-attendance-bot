@@ -9,6 +9,7 @@
 - `messageCreate` 이벤트 기반 자동 출석체크
 - 하루 1회만 출석 처리
 - 출석 횟수, 출석률, 연속 출석일수 계산
+- 일일 출석 순서 점수 누적
 - `/출석확인` 슬래시 명령어 지원
 - `/출석확인 유저:@user`로 다른 유저 기록 확인 가능
 - embed 메시지로 출석 결과와 조회 결과 출력
@@ -27,17 +28,26 @@ ${DB_PATH}/database.json
 ```json
 {
   "guild_id": {
-    "member_id": {
-      "last_check": "2026-05-30",
-      "check_start_date": "2026-05-30",
-      "check_count": 1,
-      "in_a_row": 1
+    "score": {
+      "last_score": 100,
+      "last_calculate": "2026-06-03"
+    },
+    "members": {
+      "member_id": {
+        "last_check": "2026-06-03",
+        "check_start_date": "2026-05-30",
+        "check_count": 5,
+        "in_a_row": 5,
+        "score": 100
+      }
     }
   }
 }
 ```
 
 날짜 형식: `YYYY-MM-DD`
+
+점수는 서버별로 매일 첫 출석자에게 100점을 지급하고, 같은 날 다음 출석자는 마지막 지급 점수의 90%를 반올림한 점수를 지급합니다. 연속 출석이 5일 이상이면 지급 점수에 20% 보너스를 반올림해 더하고, 지급된 점수는 멤버의 `score`에 누적됩니다.
 
 ## Environment
 
