@@ -1,8 +1,13 @@
 import { type ChatInputCommandInteraction, type Client, Events, type Message } from "discord.js";
 
 import { formatDate, getYesterday } from "./date.js";
-import { getAttendance, setAttendanceWithScore, type AttendanceRecord } from "./database.js";
-import { createAttendanceCheckEmbed, createAttendanceEmbed, createNoticeEmbed } from "./embeds.js";
+import { getAttendance, getScoreRanking, setAttendanceWithScore, type AttendanceRecord } from "./database.js";
+import {
+  createAttendanceCheckEmbed,
+  createAttendanceEmbed,
+  createNoticeEmbed,
+  createScoreRankingEmbed,
+} from "./embeds.js";
 
 type AttendanceRecordWithoutScore = Omit<AttendanceRecord, "score">;
 
@@ -53,6 +58,7 @@ async function handleAttendanceMessage(message: Message): Promise<void> {
       createAttendanceEmbed(
         savedAttendance.record,
         today,
+        memberId,
         savedAttendance.awardScore,
         savedAttendance.baseScore,
         savedAttendance.hasStreakBonus,
@@ -62,6 +68,11 @@ async function handleAttendanceMessage(message: Message): Promise<void> {
 }
 
 async function handleAttendanceCheckCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  if (interaction.commandName === "점수순위") {
+    await handleScoreRankingCommand(interaction);
+    return;
+  }
+
   if (interaction.commandName !== "출석확인") {
     return;
   }
@@ -84,4 +95,24 @@ async function handleAttendanceCheckCommand(interaction: ChatInputCommandInterac
   }
 
   await interaction.reply({ embeds: [createAttendanceCheckEmbed(attendance, formatDate(), targetUser.id)] });
+}
+
+async function handleScoreRankingCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  if (!interaction.guildId) {
+    await interaction.reply({
+      embeds: [createNoticeEmbed("점수 순위", "서버에서만 확인 가능")],
+    });
+    return;
+  }
+
+  const ranking = await getScoreRanking(interaction.guildId);
+
+  if (ranking.length === 0) {
+    await interaction.reply({
+      embeds: [createNoticeEmbed("점수 순위", "출석 기록 없음")],
+    });
+    return;
+  }
+
+  await interaction.reply({ embeds: [createScoreRankingEmbed(ranking)] });
 }

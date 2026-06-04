@@ -23,6 +23,13 @@ type AttendanceDatabase = Record<string, GuildAttendance>;
 
 type AttendanceRecordWithoutScore = Omit<AttendanceRecord, "score">;
 
+export type ScoreRankingItem = {
+  memberId: string;
+  score: number;
+  checkCount: number;
+  inARow: number;
+};
+
 export type AttendanceScoreResult = {
   record: AttendanceRecord;
   awardScore: number;
@@ -96,6 +103,35 @@ export async function getAttendance(
   const database = await readDatabase();
 
   return database[guildId]?.members[memberId] ?? null;
+}
+
+export async function getScoreRanking(guildId: string, limit = 10): Promise<ScoreRankingItem[]> {
+  const database = await readDatabase();
+  const members = database[guildId]?.members;
+
+  if (!members) {
+    return [];
+  }
+
+  return Object.entries(members)
+    .map(([memberId, record]) => ({
+      memberId,
+      score: record.score,
+      checkCount: record.check_count,
+      inARow: record.in_a_row,
+    }))
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      if (right.checkCount !== left.checkCount) {
+        return right.checkCount - left.checkCount;
+      }
+
+      return right.inARow - left.inARow;
+    })
+    .slice(0, limit);
 }
 
 function getDefaultGuildAttendance(today: string): GuildAttendance {

@@ -1,11 +1,12 @@
 import { EmbedBuilder } from "discord.js";
 
 import { getAttendanceDays } from "./date.js";
-import type { AttendanceRecord } from "./database.js";
+import type { AttendanceRecord, ScoreRankingItem } from "./database.js";
 
 export function createAttendanceEmbed(
   record: AttendanceRecord,
   today: string,
+  userId: string,
   awardScore: number,
   baseScore: number,
   hasStreakBonus: boolean,
@@ -18,12 +19,27 @@ export function createAttendanceEmbed(
     .setTitle("출석 완료")
     .setColor(0x2ecc71)
     .addFields(
+      { name: "대상", value: `<@${userId}>`, inline: false },
       { name: "출석 횟수", value: `${record.check_count}회`, inline: true },
       { name: "출석률", value: `${attendanceRate.toFixed(1)}% (${record.check_count}/${attendanceDays})`, inline: true },
       { name: "연속 출석", value: `${record.in_a_row}일`, inline: true },
       { name: "획득 점수", value: awardScoreText, inline: true },
       { name: "누적 점수", value: `${record.score}점`, inline: true },
     );
+}
+
+export function createScoreRankingEmbed(ranking: ScoreRankingItem[]): EmbedBuilder {
+  const description = ranking
+    .map(
+      (item, index) =>
+        `${index + 1}. <@${item.memberId}> - ${item.score}점 (${item.checkCount}회, ${item.inARow}일 연속)`,
+    )
+    .join("\n");
+
+  return new EmbedBuilder()
+    .setTitle("점수 순위")
+    .setColor(0xf1c40f)
+    .setDescription(description);
 }
 
 export function createAttendanceCheckEmbed(record: AttendanceRecord, today: string, userId: string): EmbedBuilder {

@@ -9,3 +9,9 @@ export const attendanceCheckCommand = new SlashCommandBuilder()
       .setDescription("출석 기록을 확인할 유저입니다.")
       .setRequired(false),
   );
+
+export const scoreRankingCommand = new SlashCommandBuilder()
+  .setName("점수순위")
+  .setDescription("서버 점수 순위를 확인합니다.");
+
+export const commands = [attendanceCheckCommand, scoreRankingCommand];
