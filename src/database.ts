@@ -37,6 +37,13 @@ export type AttendanceScoreResult = {
   hasStreakBonus: boolean;
 };
 
+export type ScoreGambleResult = {
+  record: AttendanceRecord;
+  betScore: number;
+  isSuccess: boolean;
+  scoreChange: number;
+};
+
 function getRequiredDatabasePath(): string {
   const databasePath = process.env.DB_PATH;
 
@@ -192,5 +199,36 @@ export async function setAttendanceWithScore(
     awardScore,
     baseScore,
     hasStreakBonus: record.in_a_row >= 5,
+  };
+}
+
+export async function applyScoreGamble(
+  guildId: string,
+  memberId: string,
+  betScore: number,
+  isSuccess: boolean,
+): Promise<ScoreGambleResult | null> {
+  const database = await readDatabase();
+  const record = database[guildId]?.members[memberId];
+
+  if (!record || record.score < betScore) {
+    return null;
+  }
+
+  const scoreChange = isSuccess ? betScore : -betScore;
+  const nextRecord = {
+    ...record,
+    score: record.score + scoreChange,
+  };
+
+  database[guildId].members[memberId] = nextRecord;
+
+  await writeDatabase(database);
+
+  return {
+    record: nextRecord,
+    betScore,
+    isSuccess,
+    scoreChange,
   };
 }

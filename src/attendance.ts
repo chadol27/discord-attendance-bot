@@ -1,15 +1,27 @@
 import { type ChatInputCommandInteraction, type Client, Events, type Message } from "discord.js";
 
 import { formatDate, getYesterday } from "./date.js";
-import { getAttendance, getScoreRanking, setAttendanceWithScore, type AttendanceRecord } from "./database.js";
+import {
+  applyScoreGamble,
+  getAttendance,
+  getScoreRanking,
+  setAttendanceWithScore,
+  type AttendanceRecord,
+} from "./database.js";
 import {
   createAttendanceCheckEmbed,
   createAttendanceEmbed,
   createNoticeEmbed,
+  createScoreGamblePendingEmbed,
+  createScoreGambleResultEmbed,
   createScoreRankingEmbed,
 } from "./embeds.js";
 
 type AttendanceRecordWithoutScore = Omit<AttendanceRecord, "score">;
+const minimumScoreGambleSuccessRate = 0.4;
+const maximumScoreGambleSuccessRate = 0.48;
+const maximumScoreGambleRateStreakDays = 16;
+const scoreGambleDelayMilliseconds = 3_000;
 
 export function registerAttendanceEvents(client: Client): void {
   client.on(Events.MessageCreate, handleAttendanceMessage);
@@ -73,6 +85,11 @@ async function handleAttendanceCheckCommand(interaction: ChatInputCommandInterac
     return;
   }
 
+  if (interaction.commandName === "점수도박") {
+    await handleScoreGambleCommand(interaction);
+    return;
+  }
+
   if (interaction.commandName !== "출석확인") {
     return;
   }
@@ -115,4 +132,73 @@ async function handleScoreRankingCommand(interaction: ChatInputCommandInteractio
   }
 
   await interaction.reply({ embeds: [createScoreRankingEmbed(ranking)] });
+}
+
+async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+  if (!interaction.guildId) {
+    await interaction.reply({
+      embeds: [createNoticeEmbed("점수 도박", "서버에서만 가능")],
+    });
+    return;
+  }
+
+  const betScore = interaction.options.getInteger("점수", true);
+
+  if (betScore < 10) {
+    await interaction.reply({
+      embeds: [createNoticeEmbed("점수 도박", "최소 베팅 점수는 10점")],
+    });
+    return;
+  }
+
+  const attendance = await getAttendance(interaction.guildId, interaction.user.id);
+
+  if (!attendance) {
+    await interaction.reply({
+      embeds: [createNoticeEmbed("점수 도박", "출석 기록 없음")],
+    });
+    return;
+  }
+
+  if (attendance.score < betScore) {
+    await interaction.reply({
+      embeds: [createNoticeEmbed("점수 도박", `보유 점수 부족 (${attendance.score}점)`)],
+    });
+    return;
+  }
+
+  const successRate = calculateScoreGambleSuccessRate(attendance.in_a_row);
+
+  await interaction.reply({
+    embeds: [createScoreGamblePendingEmbed(interaction.user.id, betScore, successRate)],
+  });
+
+  await delay(scoreGambleDelayMilliseconds);
+
+  const isSuccess = Math.random() < successRate;
+  const result = await applyScoreGamble(interaction.guildId, interaction.user.id, betScore, isSuccess);
+
+  if (!result) {
+    await interaction.editReply({
+      embeds: [createNoticeEmbed("점수 도박", "점수 처리 실패")],
+    });
+    return;
+  }
+
+  await interaction.editReply({
+    embeds: [createScoreGambleResultEmbed(result, interaction.user.id, successRate)],
+  });
+}
+
+function calculateScoreGambleSuccessRate(inARow: number): number {
+  const streakDays = Math.min(Math.max(inARow, 1), maximumScoreGambleRateStreakDays);
+  const progress = (streakDays - 1) / (maximumScoreGambleRateStreakDays - 1);
+
+  return minimumScoreGambleSuccessRate + (maximumScoreGambleSuccessRate - minimumScoreGambleSuccessRate) * progress;
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }

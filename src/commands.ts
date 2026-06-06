@@ -14,4 +14,15 @@ export const scoreRankingCommand = new SlashCommandBuilder()
   .setName("점수순위")
   .setDescription("서버 점수 순위를 확인합니다.");
 
-export const commands = [attendanceCheckCommand, scoreRankingCommand];
+export const scoreGambleCommand = new SlashCommandBuilder()
+  .setName("점수도박")
+  .setDescription("현재 점수로 도박합니다. (확률: 40% ~ 48(연속 16일 이상))")
+  .addIntegerOption((option) =>
+    option
+      .setName("점수")
+      .setDescription("도박에 걸 점수입니다. (최소 10)")
+      .setMinValue(10)
+      .setRequired(true),
+  );
+
+export const commands = [attendanceCheckCommand, scoreRankingCommand, scoreGambleCommand];
