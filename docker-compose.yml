@@ -2,6 +2,7 @@ services:
   discord-attendance:
     build: .
     container_name: discord-attendance
+    restart: unless-stopped
     volumes:
       - ./database:/database
     env_file:
