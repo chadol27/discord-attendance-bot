@@ -20,11 +20,6 @@ import {
 } from "./embeds.js";
 
 type AttendanceRecordWithoutScore = Omit<AttendanceRecord, "score">;
-const minimumScoreGambleBetScore = 10;
-const minimumScoreGambleSuccessRate = 0.4;
-const maximumScoreGambleSuccessRate = 0.48;
-const maximumScoreGambleRateStreakDays = 16;
-const scoreGambleDelayMilliseconds = 3_000;
 
 export function registerAttendanceEvents(client: Client, config: AppConfig): void {
   client.on(Events.MessageCreate, (message) => {
@@ -68,7 +63,7 @@ async function handleAttendanceMessage(message: Message, config: AppConfig): Pro
         in_a_row: 1,
       };
 
-  const savedAttendance = await setAttendanceWithScore(guildId, memberId, nextAttendance, today);
+  const savedAttendance = await setAttendanceWithScore(guildId, memberId, nextAttendance, today, config);
 
   await message.reply({
     embeds: [
@@ -79,6 +74,7 @@ async function handleAttendanceMessage(message: Message, config: AppConfig): Pro
         savedAttendance.awardScore,
         savedAttendance.baseScore,
         savedAttendance.hasStreakBonus,
+        config.attendanceScore.streakBonusRate,
       ),
     ],
   });
@@ -91,7 +87,7 @@ async function handleAttendanceCheckCommand(interaction: ChatInputCommandInterac
   }
 
   if (interaction.commandName === "점수도박") {
-    await handleScoreGambleCommand(interaction);
+    await handleScoreGambleCommand(interaction, config);
     return;
   }
 
@@ -141,7 +137,7 @@ async function handleScoreRankingCommand(interaction: ChatInputCommandInteractio
   await interaction.reply({ embeds: [createScoreRankingEmbed(ranking)] });
 }
 
-async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction, config: AppConfig): Promise<void> {
   if (!interaction.guildId) {
     await interaction.reply({
       embeds: [createNoticeEmbed("점수 도박", "서버에서만 가능")],
@@ -159,11 +155,12 @@ async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction
     return;
   }
 
-  const maximumBetScore = calculateMaximumScoreGambleBetScore(attendance.score);
+  const { scoreGamble } = config;
+  const maximumBetScore = calculateMaximumScoreGambleBetScore(attendance.score, config);
 
-  if (betScore < minimumScoreGambleBetScore || betScore > maximumBetScore) {
+  if (betScore < scoreGamble.minimumBetScore || betScore > maximumBetScore) {
     await interaction.reply({
-      embeds: [createScoreGambleLimitEmbed(betScore, minimumScoreGambleBetScore, maximumBetScore)],
+      embeds: [createScoreGambleLimitEmbed(betScore, scoreGamble.minimumBetScore, maximumBetScore)],
     });
     return;
   }
@@ -175,13 +172,13 @@ async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction
     return;
   }
 
-  const successRate = calculateScoreGambleSuccessRate(attendance.in_a_row);
+  const successRate = calculateScoreGambleSuccessRate(attendance.in_a_row, config);
 
   await interaction.reply({
     embeds: [createScoreGamblePendingEmbed(interaction.user.id, betScore, successRate)],
   });
 
-  await delay(scoreGambleDelayMilliseconds);
+  await delay(scoreGamble.delayMilliseconds);
 
   const isSuccess = Math.random() < successRate;
   const result = await applyScoreGamble(interaction.guildId, interaction.user.id, betScore, isSuccess);
@@ -198,15 +195,18 @@ async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction
   });
 }
 
-function calculateMaximumScoreGambleBetScore(score: number): number {
-  return Math.max(minimumScoreGambleBetScore, Math.floor(score * 0.5));
+function calculateMaximumScoreGambleBetScore(score: number, config: AppConfig): number {
+  const { minimumBetScore, maximumBetScoreRate } = config.scoreGamble;
+
+  return Math.max(minimumBetScore, Math.floor(score * maximumBetScoreRate));
 }
 
-function calculateScoreGambleSuccessRate(inARow: number): number {
-  const streakDays = Math.min(Math.max(inARow, 1), maximumScoreGambleRateStreakDays);
-  const progress = (streakDays - 1) / (maximumScoreGambleRateStreakDays - 1);
+function calculateScoreGambleSuccessRate(inARow: number, config: AppConfig): number {
+  const { maximumRateStreakDays, maximumSuccessRate, minimumSuccessRate } = config.scoreGamble;
+  const streakDays = Math.min(Math.max(inARow, 1), maximumRateStreakDays);
+  const progress = maximumRateStreakDays <= 1 ? 1 : (streakDays - 1) / (maximumRateStreakDays - 1);
 
-  return minimumScoreGambleSuccessRate + (maximumScoreGambleSuccessRate - minimumScoreGambleSuccessRate) * progress;
+  return minimumSuccessRate + (maximumSuccessRate - minimumSuccessRate) * progress;
 }
 
 function delay(milliseconds: number): Promise<void> {

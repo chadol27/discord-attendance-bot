@@ -1,3 +1,17 @@
 {
-  "attendanceDayStartHour": 8
+  "attendanceDayStartHour": 8,
+  "scoreGamble": {
+    "minimumBetScore": 10,
+    "maximumBetScoreRate": 0.5,
+    "minimumSuccessRate": 0.4,
+    "maximumSuccessRate": 0.48,
+    "maximumRateStreakDays": 16,
+    "delayMilliseconds": 3000
+  },
+  "attendanceScore": {
+    "initialBaseScore": 100,
+    "sameDayBaseScoreRate": 0.9,
+    "streakBonusRequiredDays": 5,
+    "streakBonusRate": 1.2
+  }
 }

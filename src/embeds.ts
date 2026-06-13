@@ -10,10 +10,12 @@ export function createAttendanceEmbed(
   awardScore: number,
   baseScore: number,
   hasStreakBonus: boolean,
+  streakBonusRate: number,
 ): EmbedBuilder {
   const attendanceDays = getAttendanceDays(record.check_start_date, today);
   const attendanceRate = (record.check_count / attendanceDays) * 100;
-  const awardScoreText = hasStreakBonus ? `${awardScore}점 (${baseScore}+20%)` : `${awardScore}점`;
+  const streakBonusPercent = formatPercent(streakBonusRate - 1);
+  const awardScoreText = hasStreakBonus ? `${awardScore}점 (${baseScore}+${streakBonusPercent})` : `${awardScore}점`;
 
   return new EmbedBuilder()
     .setTitle("출석 완료")

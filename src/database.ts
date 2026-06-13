@@ -1,6 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import type { AppConfig } from "./config.js";
+
 export type AttendanceRecord = {
   last_check: string;
   check_start_date: string;
@@ -151,20 +153,22 @@ function getDefaultGuildAttendance(today: string): GuildAttendance {
   };
 }
 
-function calculateBaseScore(score: GuildScore, today: string): number {
+function calculateBaseScore(score: GuildScore, today: string, config: AppConfig): number {
+  const { initialBaseScore, sameDayBaseScoreRate } = config.attendanceScore;
+
   if (score.last_calculate !== today || score.last_score <= 0) {
-    return 100;
+    return initialBaseScore;
   }
 
-  return Math.round(score.last_score * 0.9);
+  return Math.round(score.last_score * sameDayBaseScoreRate);
 }
 
-function calculateAwardScore(baseScore: number, inARow: number): number {
-  if (inARow < 5) {
+function calculateAwardScore(baseScore: number, inARow: number, config: AppConfig): number {
+  if (inARow < config.attendanceScore.streakBonusRequiredDays) {
     return baseScore;
   }
 
-  return Math.round(baseScore * 1.2);
+  return Math.round(baseScore * config.attendanceScore.streakBonusRate);
 }
 
 export async function setAttendanceWithScore(
@@ -172,14 +176,15 @@ export async function setAttendanceWithScore(
   memberId: string,
   record: AttendanceRecordWithoutScore,
   today: string,
+  config: AppConfig,
 ): Promise<AttendanceScoreResult> {
   const database = await readDatabase();
 
   database[guildId] ??= getDefaultGuildAttendance(today);
 
   const guildAttendance = database[guildId];
-  const baseScore = calculateBaseScore(guildAttendance.score, today);
-  const awardScore = calculateAwardScore(baseScore, record.in_a_row);
+  const baseScore = calculateBaseScore(guildAttendance.score, today, config);
+  const awardScore = calculateAwardScore(baseScore, record.in_a_row, config);
   const previousScore = guildAttendance.members[memberId]?.score ?? 0;
   const nextRecord = {
     ...record,
@@ -198,7 +203,7 @@ export async function setAttendanceWithScore(
     record: nextRecord,
     awardScore,
     baseScore,
-    hasStreakBonus: record.in_a_row >= 5,
+    hasStreakBonus: record.in_a_row >= config.attendanceScore.streakBonusRequiredDays,
   };
 }
 

@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
 
 import { registerAttendanceEvents } from "./attendance.js";
-import { commands } from "./commands.js";
+import { createCommands } from "./commands.js";
 import { loadConfig } from "./config.js";
 
 const token = process.env.DISCORD_TOKEN;
@@ -27,7 +27,7 @@ const client = new Client({
 });
 
 client.once(Events.ClientReady, async (readyClient) => {
-  await readyClient.application.commands.set(commands);
+  await readyClient.application.commands.set(createCommands(config));
 
   console.log(`Logged in as ${readyClient.user.tag}, ${new Date().toLocaleString()}`);
 });

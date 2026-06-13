@@ -59,11 +59,35 @@ ${DB_PATH}/database.json
 
 ```json
 {
-  "attendanceDayStartHour": 8
+  "attendanceDayStartHour": 8,
+  "scoreGamble": {
+    "minimumBetScore": 10,
+    "maximumBetScoreRate": 0.5,
+    "minimumSuccessRate": 0.4,
+    "maximumSuccessRate": 0.48,
+    "maximumRateStreakDays": 16,
+    "delayMilliseconds": 3000
+  },
+  "attendanceScore": {
+    "initialBaseScore": 100,
+    "sameDayBaseScoreRate": 0.9,
+    "streakBonusRequiredDays": 5,
+    "streakBonusRate": 1.2
+  }
 }
 ```
 
 - `attendanceDayStartHour`: 출석 날짜가 바뀌는 서버 로컬시간 기준 시각. `0`부터 `23`까지의 정수.
+- `attendanceScore.initialBaseScore`: 새 날짜 첫 출석 기본 점수.
+- `attendanceScore.sameDayBaseScoreRate`: 같은 날짜 다음 출석자의 기본 점수 비율.
+- `attendanceScore.streakBonusRequiredDays`: 연속 출석 보너스가 붙는 최소 연속 일수.
+- `attendanceScore.streakBonusRate`: 연속 출석 보너스 지급 배율. `1.2`면 20% 보너스.
+- `scoreGamble.minimumBetScore`: 점수 도박 최소 베팅 점수.
+- `scoreGamble.maximumBetScoreRate`: 보유 점수 대비 최대 베팅 비율. `0.5`면 50%.
+- `scoreGamble.minimumSuccessRate`: 점수 도박 최소 성공 확률.
+- `scoreGamble.maximumSuccessRate`: 점수 도박 최대 성공 확률.
+- `scoreGamble.maximumRateStreakDays`: 최대 성공 확률에 도달하는 연속 출석일.
+- `scoreGamble.delayMilliseconds`: 도박 결과 표시 전 대기 시간.
 
 ## Environment
 
@@ -110,7 +134,7 @@ npm start
 - `/출석확인`: 내 출석 기록 확인
 - `/출석확인 유저:@user`: 지정한 유저의 출석 기록 확인
 - `/점수순위`: 서버 점수 순위 확인
-- `/점수도박 점수:n`: 점수 도박. 베팅 가능 범위는 최소 10점, 최대 `max(10, 보유 점수 * 0.5)`점.
+- `/점수도박 점수:n`: 점수 도박. 베팅 가능 범위는 config 기준 최소 점수부터 `max(최소 점수, 보유 점수 * 최대 베팅 비율)`까지.
 
 ## Project Structure
 
