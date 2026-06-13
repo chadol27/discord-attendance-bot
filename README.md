@@ -51,7 +51,7 @@ ${DB_PATH}/database.json
 
 출석 날짜는 서버 로컬시간 기준 `config.json`의 `attendanceDayStartHour`시에 바뀝니다. 기본값은 `8`이며, `08:00` 전까지는 전날 출석으로 처리합니다.
 
-점수는 서버별로 매일 첫 출석자에게 100점을 지급하고, 같은 날 다음 출석자는 마지막 지급 점수의 90%를 반올림한 점수를 지급합니다. 연속 출석이 5일 이상이면 지급 점수에 20% 보너스를 반올림해 더하고, 지급된 점수는 멤버의 `score`에 누적됩니다.
+점수는 서버별로 매일 첫 출석자에게 100점을 지급하고, 같은 날 다음 출석자는 마지막 지급 점수의 90%를 반올림한 점수를 지급합니다. 연속 출석 보너스는 1일 0%에서 30일 50%까지 선형으로 증가하고, 지급된 점수는 멤버의 `score`에 누적됩니다.
 
 ## Config
 
@@ -71,8 +71,9 @@ ${DB_PATH}/database.json
   "attendanceScore": {
     "initialBaseScore": 100,
     "sameDayBaseScoreRate": 0.9,
-    "streakBonusRequiredDays": 5,
-    "streakBonusRate": 1.2
+    "minimumStreakBonusRate": 0,
+    "maximumStreakBonusRate": 0.5,
+    "maximumStreakBonusRateDays": 30
   }
 }
 ```
@@ -80,8 +81,9 @@ ${DB_PATH}/database.json
 - `attendanceDayStartHour`: 출석 날짜가 바뀌는 서버 로컬시간 기준 시각. `0`부터 `23`까지의 정수.
 - `attendanceScore.initialBaseScore`: 새 날짜 첫 출석 기본 점수.
 - `attendanceScore.sameDayBaseScoreRate`: 같은 날짜 다음 출석자의 기본 점수 비율.
-- `attendanceScore.streakBonusRequiredDays`: 연속 출석 보너스가 붙는 최소 연속 일수.
-- `attendanceScore.streakBonusRate`: 연속 출석 보너스 지급 배율. `1.2`면 20% 보너스.
+- `attendanceScore.minimumStreakBonusRate`: 최소 연속 출석 보너스율.
+- `attendanceScore.maximumStreakBonusRate`: 최대 연속 출석 보너스율. `0.5`면 50%.
+- `attendanceScore.maximumStreakBonusRateDays`: 최대 보너스율에 도달하는 연속 출석일.
 - `scoreGamble.minimumBetScore`: 점수 도박 최소 베팅 점수.
 - `scoreGamble.maximumBetScoreRate`: 보유 점수 대비 최대 베팅 비율. `0.5`면 50%.
 - `scoreGamble.minimumSuccessRate`: 점수 도박 최소 성공 확률.

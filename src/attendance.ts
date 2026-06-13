@@ -74,7 +74,7 @@ async function handleAttendanceMessage(message: Message, config: AppConfig): Pro
         savedAttendance.awardScore,
         savedAttendance.baseScore,
         savedAttendance.hasStreakBonus,
-        config.attendanceScore.streakBonusRate,
+        savedAttendance.streakBonusRate,
       ),
     ],
   });

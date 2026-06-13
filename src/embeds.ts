@@ -14,7 +14,7 @@ export function createAttendanceEmbed(
 ): EmbedBuilder {
   const attendanceDays = getAttendanceDays(record.check_start_date, today);
   const attendanceRate = (record.check_count / attendanceDays) * 100;
-  const streakBonusPercent = formatPercent(streakBonusRate - 1);
+  const streakBonusPercent = formatPercent(streakBonusRate);
   const awardScoreText = hasStreakBonus ? `${awardScore}점 (${baseScore}+${streakBonusPercent})` : `${awardScore}점`;
 
   return new EmbedBuilder()

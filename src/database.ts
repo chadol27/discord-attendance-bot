@@ -37,6 +37,7 @@ export type AttendanceScoreResult = {
   awardScore: number;
   baseScore: number;
   hasStreakBonus: boolean;
+  streakBonusRate: number;
 };
 
 export type ScoreGambleResult = {
@@ -163,12 +164,16 @@ function calculateBaseScore(score: GuildScore, today: string, config: AppConfig)
   return Math.round(score.last_score * sameDayBaseScoreRate);
 }
 
-function calculateAwardScore(baseScore: number, inARow: number, config: AppConfig): number {
-  if (inARow < config.attendanceScore.streakBonusRequiredDays) {
-    return baseScore;
-  }
+function calculateStreakBonusRate(inARow: number, config: AppConfig): number {
+  const { maximumStreakBonusRate, maximumStreakBonusRateDays, minimumStreakBonusRate } = config.attendanceScore;
+  const streakDays = Math.min(Math.max(inARow, 1), maximumStreakBonusRateDays);
+  const progress = maximumStreakBonusRateDays <= 1 ? 1 : (streakDays - 1) / (maximumStreakBonusRateDays - 1);
 
-  return Math.round(baseScore * config.attendanceScore.streakBonusRate);
+  return minimumStreakBonusRate + (maximumStreakBonusRate - minimumStreakBonusRate) * progress;
+}
+
+function calculateAwardScore(baseScore: number, streakBonusRate: number): number {
+  return Math.round(baseScore * (1 + streakBonusRate));
 }
 
 export async function setAttendanceWithScore(
@@ -184,7 +189,8 @@ export async function setAttendanceWithScore(
 
   const guildAttendance = database[guildId];
   const baseScore = calculateBaseScore(guildAttendance.score, today, config);
-  const awardScore = calculateAwardScore(baseScore, record.in_a_row, config);
+  const streakBonusRate = calculateStreakBonusRate(record.in_a_row, config);
+  const awardScore = calculateAwardScore(baseScore, streakBonusRate);
   const previousScore = guildAttendance.members[memberId]?.score ?? 0;
   const nextRecord = {
     ...record,
@@ -203,7 +209,8 @@ export async function setAttendanceWithScore(
     record: nextRecord,
     awardScore,
     baseScore,
-    hasStreakBonus: record.in_a_row >= config.attendanceScore.streakBonusRequiredDays,
+    hasStreakBonus: streakBonusRate > 0,
+    streakBonusRate,
   };
 }
 

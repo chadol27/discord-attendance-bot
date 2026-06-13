@@ -9,8 +9,9 @@ export type AppConfig = {
 type AttendanceScoreConfig = {
   initialBaseScore: number;
   sameDayBaseScoreRate: number;
-  streakBonusRequiredDays: number;
-  streakBonusRate: number;
+  minimumStreakBonusRate: number;
+  maximumStreakBonusRate: number;
+  maximumStreakBonusRateDays: number;
 };
 
 type ScoreGambleConfig = {
@@ -27,8 +28,9 @@ const defaultConfig: AppConfig = {
   attendanceScore: {
     initialBaseScore: 100,
     sameDayBaseScoreRate: 0.9,
-    streakBonusRequiredDays: 5,
-    streakBonusRate: 1.2,
+    minimumStreakBonusRate: 0,
+    maximumStreakBonusRate: 0.5,
+    maximumStreakBonusRateDays: 30,
   },
   scoreGamble: {
     minimumBetScore: 10,
@@ -76,16 +78,20 @@ export async function loadConfig(configPath = "config.json"): Promise<AppConfig>
         attendanceScore.sameDayBaseScoreRate,
         defaultConfig.attendanceScore.sameDayBaseScoreRate,
       ),
-      streakBonusRequiredDays: validatePositiveInteger(
-        "attendanceScore.streakBonusRequiredDays",
-        attendanceScore.streakBonusRequiredDays,
-        defaultConfig.attendanceScore.streakBonusRequiredDays,
+      minimumStreakBonusRate: validateRate(
+        "attendanceScore.minimumStreakBonusRate",
+        attendanceScore.minimumStreakBonusRate,
+        defaultConfig.attendanceScore.minimumStreakBonusRate,
       ),
-      streakBonusRate: validateMinimumNumber(
-        "attendanceScore.streakBonusRate",
-        attendanceScore.streakBonusRate,
-        defaultConfig.attendanceScore.streakBonusRate,
-        1,
+      maximumStreakBonusRate: validateRate(
+        "attendanceScore.maximumStreakBonusRate",
+        attendanceScore.maximumStreakBonusRate,
+        defaultConfig.attendanceScore.maximumStreakBonusRate,
+      ),
+      maximumStreakBonusRateDays: validatePositiveInteger(
+        "attendanceScore.maximumStreakBonusRateDays",
+        attendanceScore.maximumStreakBonusRateDays,
+        defaultConfig.attendanceScore.maximumStreakBonusRateDays,
       ),
     },
     scoreGamble: {
@@ -172,18 +178,6 @@ function validateRate(name: string, value: unknown, defaultValue: number): numbe
 
   if (typeof value !== "number" || value < 0 || value > 1) {
     throw new Error(`config.json ${name} must be a number between 0 and 1.`);
-  }
-
-  return value;
-}
-
-function validateMinimumNumber(name: string, value: unknown, defaultValue: number, minimum: number): number {
-  if (value === undefined) {
-    return defaultValue;
-  }
-
-  if (typeof value !== "number" || value < minimum) {
-    throw new Error(`config.json ${name} must be a number greater than or equal to ${minimum}.`);
   }
 
   return value;
