@@ -8,6 +8,16 @@ export function formatDate(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+export function getAttendanceDate(date = new Date(), attendanceDayStartHour: number): string {
+  const attendanceDate = new Date(date);
+
+  if (attendanceDate.getHours() < attendanceDayStartHour) {
+    attendanceDate.setDate(attendanceDate.getDate() - 1);
+  }
+
+  return formatDate(attendanceDate);
+}
+
 function parseDateParts(date: string): [number, number, number] {
   const [year, month, day] = date.split("-").map(Number);
 

@@ -8,6 +8,7 @@
 
 - `messageCreate` 이벤트 기반 자동 출석체크
 - 하루 1회만 출석 처리
+- 날짜 변경 기준 시간 설정 가능
 - 출석 횟수, 출석률, 연속 출석일수 계산
 - 일일 출석 순서 점수 누적
 - `/출석확인` 슬래시 명령어 지원
@@ -48,7 +49,21 @@ ${DB_PATH}/database.json
 
 날짜 형식: `YYYY-MM-DD`
 
+출석 날짜는 서버 로컬시간 기준 `config.json`의 `attendanceDayStartHour`시에 바뀝니다. 기본값은 `8`이며, `08:00` 전까지는 전날 출석으로 처리합니다.
+
 점수는 서버별로 매일 첫 출석자에게 100점을 지급하고, 같은 날 다음 출석자는 마지막 지급 점수의 90%를 반올림한 점수를 지급합니다. 연속 출석이 5일 이상이면 지급 점수에 20% 보너스를 반올림해 더하고, 지급된 점수는 멤버의 `score`에 누적됩니다.
+
+## Config
+
+루트 `config.json`에서 런타임 설정을 읽습니다. 파일이 없으면 기본값을 사용합니다.
+
+```json
+{
+  "attendanceDayStartHour": 8
+}
+```
+
+- `attendanceDayStartHour`: 출석 날짜가 바뀌는 서버 로컬시간 기준 시각. `0`부터 `23`까지의 정수.
 
 ## Environment
 
@@ -101,6 +116,7 @@ npm start
 - `src/index.ts`: 봇 엔트리포인트, 클라이언트 생성, 명령어 등록
 - `src/attendance.ts`: 출석체크 이벤트와 명령어 처리
 - `src/commands.ts`: 슬래시 명령어 정의
+- `src/config.ts`: 런타임 설정 로드
 - `src/embeds.ts`: embed 응답 생성
 - `src/date.ts`: 날짜 포맷과 날짜 계산
 - `src/database.ts`: JSON DB 읽기/쓰기

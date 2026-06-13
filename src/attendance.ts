@@ -1,6 +1,7 @@
 import { type ChatInputCommandInteraction, type Client, Events, type Message } from "discord.js";
 
-import { formatDate, getYesterday } from "./date.js";
+import type { AppConfig } from "./config.js";
+import { getAttendanceDate, getYesterday } from "./date.js";
 import {
   applyScoreGamble,
   getAttendance,
@@ -23,23 +24,25 @@ const maximumScoreGambleSuccessRate = 0.48;
 const maximumScoreGambleRateStreakDays = 16;
 const scoreGambleDelayMilliseconds = 3_000;
 
-export function registerAttendanceEvents(client: Client): void {
-  client.on(Events.MessageCreate, handleAttendanceMessage);
+export function registerAttendanceEvents(client: Client, config: AppConfig): void {
+  client.on(Events.MessageCreate, (message) => {
+    void handleAttendanceMessage(message, config);
+  });
   client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) {
       return;
     }
 
-    await handleAttendanceCheckCommand(interaction);
+    await handleAttendanceCheckCommand(interaction, config);
   });
 }
 
-async function handleAttendanceMessage(message: Message): Promise<void> {
+async function handleAttendanceMessage(message: Message, config: AppConfig): Promise<void> {
   if (!message.guildId || message.author.bot) {
     return;
   }
 
-  const today = formatDate();
+  const today = getAttendanceDate(new Date(), config.attendanceDayStartHour);
   const yesterday = getYesterday(today);
   const guildId = message.guildId;
   const memberId = message.author.id;
@@ -79,7 +82,7 @@ async function handleAttendanceMessage(message: Message): Promise<void> {
   });
 }
 
-async function handleAttendanceCheckCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+async function handleAttendanceCheckCommand(interaction: ChatInputCommandInteraction, config: AppConfig): Promise<void> {
   if (interaction.commandName === "점수순위") {
     await handleScoreRankingCommand(interaction);
     return;
@@ -111,7 +114,9 @@ async function handleAttendanceCheckCommand(interaction: ChatInputCommandInterac
     return;
   }
 
-  await interaction.reply({ embeds: [createAttendanceCheckEmbed(attendance, formatDate(), targetUser.id)] });
+  await interaction.reply({
+    embeds: [createAttendanceCheckEmbed(attendance, getAttendanceDate(new Date(), config.attendanceDayStartHour), targetUser.id)],
+  });
 }
 
 async function handleScoreRankingCommand(interaction: ChatInputCommandInteraction): Promise<void> {

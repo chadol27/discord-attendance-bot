@@ -2,6 +2,7 @@ import { Client, Events, GatewayIntentBits } from "discord.js";
 
 import { registerAttendanceEvents } from "./attendance.js";
 import { commands } from "./commands.js";
+import { loadConfig } from "./config.js";
 
 const token = process.env.DISCORD_TOKEN;
 const databasePath = process.env.DB_PATH;
@@ -13,6 +14,8 @@ if (!token) {
 if (!databasePath) {
   throw new Error("DB_PATH is required.");
 }
+
+const config = await loadConfig();
 
 const client = new Client({
   intents: [
@@ -29,6 +32,6 @@ client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Logged in as ${readyClient.user.tag}, ${new Date().toLocaleString()}`);
 });
 
-registerAttendanceEvents(client);
+registerAttendanceEvents(client, config);
 
 await client.login(token);
