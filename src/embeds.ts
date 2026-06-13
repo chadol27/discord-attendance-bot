@@ -3,6 +3,14 @@ import { EmbedBuilder } from "discord.js";
 import { getAttendanceDays } from "./date.js";
 import type { AttendanceRecord, ScoreGambleResult, ScoreRankingItem } from "./database.js";
 
+const EMBED_COLORS = {
+  success: 0x2ecc71,
+  info: 0x3498db,
+  warning: 0xf1c40f,
+  error: 0xe74c3c,
+  neutral: 0x95a5a6,
+} as const;
+
 export function createAttendanceEmbed(
   record: AttendanceRecord,
   today: string,
@@ -19,7 +27,7 @@ export function createAttendanceEmbed(
 
   return new EmbedBuilder()
     .setTitle("출석 완료")
-    .setColor(0x2ecc71)
+    .setColor(EMBED_COLORS.success)
     .addFields(
       { name: "대상", value: `<@${userId}>`, inline: false },
       { name: "출석 횟수", value: `${record.check_count}회`, inline: true },
@@ -40,14 +48,14 @@ export function createScoreRankingEmbed(ranking: ScoreRankingItem[]): EmbedBuild
 
   return new EmbedBuilder()
     .setTitle("점수 순위")
-    .setColor(0xf1c40f)
+    .setColor(EMBED_COLORS.warning)
     .setDescription(description);
 }
 
 export function createScoreGamblePendingEmbed(userId: string, betScore: number, successRate: number): EmbedBuilder {
   return new EmbedBuilder()
     .setTitle("점수 도박")
-    .setColor(0x95a5a6)
+    .setColor(EMBED_COLORS.neutral)
     .addFields(
       { name: "대상", value: `<@${userId}>`, inline: false },
       { name: "베팅 점수", value: `${betScore}점`, inline: true },
@@ -63,7 +71,7 @@ export function createScoreGambleLimitEmbed(
 ): EmbedBuilder {
   return new EmbedBuilder()
     .setTitle("점수 도박")
-    .setColor(0x95a5a6)
+    .setColor(EMBED_COLORS.neutral)
     .setDescription("베팅 점수 범위 초과")
     .addFields(
       { name: "입력 점수", value: `${betScore}점`, inline: true },
@@ -74,7 +82,7 @@ export function createScoreGambleLimitEmbed(
 
 export function createScoreGambleResultEmbed(result: ScoreGambleResult, userId: string, successRate: number): EmbedBuilder {
   const title = result.isSuccess ? "점수 도박 성공" : "점수 도박 실패";
-  const color = result.isSuccess ? 0x2ecc71 : 0xe74c3c;
+  const color = result.isSuccess ? EMBED_COLORS.success : EMBED_COLORS.error;
   const changeText = result.scoreChange > 0 ? `+${result.scoreChange}점` : `${result.scoreChange}점`;
 
   return new EmbedBuilder()
@@ -95,7 +103,7 @@ export function createAttendanceCheckEmbed(record: AttendanceRecord, today: stri
 
   return new EmbedBuilder()
     .setTitle("출석 기록")
-    .setColor(0x3498db)
+    .setColor(EMBED_COLORS.info)
     .addFields(
       { name: "대상", value: `<@${userId}>`, inline: false },
       { name: "첫 출석일", value: record.check_start_date, inline: true },
@@ -108,7 +116,7 @@ export function createAttendanceCheckEmbed(record: AttendanceRecord, today: stri
 }
 
 export function createNoticeEmbed(title: string, description: string): EmbedBuilder {
-  return new EmbedBuilder().setTitle(title).setDescription(description).setColor(0x95a5a6);
+  return new EmbedBuilder().setTitle(title).setDescription(description).setColor(EMBED_COLORS.neutral);
 }
 
 function formatPercent(rate: number): string {
