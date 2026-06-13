@@ -54,6 +54,22 @@ export function createScoreGamblePendingEmbed(userId: string, betScore: number, 
     );
 }
 
+export function createScoreGambleLimitEmbed(
+  betScore: number,
+  minimumBetScore: number,
+  maximumBetScore: number,
+): EmbedBuilder {
+  return new EmbedBuilder()
+    .setTitle("점수 도박")
+    .setColor(0x95a5a6)
+    .setDescription("베팅 점수 범위 초과")
+    .addFields(
+      { name: "입력 점수", value: `${betScore}점`, inline: true },
+      { name: "최소 베팅 점수", value: `${minimumBetScore}점`, inline: true },
+      { name: "최대 베팅 점수", value: `${maximumBetScore}점`, inline: true },
+    );
+}
+
 export function createScoreGambleResultEmbed(result: ScoreGambleResult, userId: string, successRate: number): EmbedBuilder {
   const title = result.isSuccess ? "점수 도박 성공" : "점수 도박 실패";
   const color = result.isSuccess ? 0x2ecc71 : 0xe74c3c;

@@ -20,8 +20,7 @@ export const scoreGambleCommand = new SlashCommandBuilder()
   .addIntegerOption((option) =>
     option
       .setName("점수")
-      .setDescription("도박에 걸 점수입니다. (최소 10)")
-      .setMinValue(10)
+      .setDescription("도박에 걸 점수입니다. (최소 10, 최대 보유 점수의 50%)")
       .setRequired(true),
   );
 

@@ -13,12 +13,14 @@ import {
   createAttendanceCheckEmbed,
   createAttendanceEmbed,
   createNoticeEmbed,
+  createScoreGambleLimitEmbed,
   createScoreGamblePendingEmbed,
   createScoreGambleResultEmbed,
   createScoreRankingEmbed,
 } from "./embeds.js";
 
 type AttendanceRecordWithoutScore = Omit<AttendanceRecord, "score">;
+const minimumScoreGambleBetScore = 10;
 const minimumScoreGambleSuccessRate = 0.4;
 const maximumScoreGambleSuccessRate = 0.48;
 const maximumScoreGambleRateStreakDays = 16;
@@ -148,19 +150,20 @@ async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction
   }
 
   const betScore = interaction.options.getInteger("점수", true);
-
-  if (betScore < 10) {
-    await interaction.reply({
-      embeds: [createNoticeEmbed("점수 도박", "최소 베팅 점수는 10점")],
-    });
-    return;
-  }
-
   const attendance = await getAttendance(interaction.guildId, interaction.user.id);
 
   if (!attendance) {
     await interaction.reply({
       embeds: [createNoticeEmbed("점수 도박", "출석 기록 없음")],
+    });
+    return;
+  }
+
+  const maximumBetScore = calculateMaximumScoreGambleBetScore(attendance.score);
+
+  if (betScore < minimumScoreGambleBetScore || betScore > maximumBetScore) {
+    await interaction.reply({
+      embeds: [createScoreGambleLimitEmbed(betScore, minimumScoreGambleBetScore, maximumBetScore)],
     });
     return;
   }
@@ -193,6 +196,10 @@ async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction
   await interaction.editReply({
     embeds: [createScoreGambleResultEmbed(result, interaction.user.id, successRate)],
   });
+}
+
+function calculateMaximumScoreGambleBetScore(score: number): number {
+  return Math.max(minimumScoreGambleBetScore, Math.floor(score * 0.5));
 }
 
 function calculateScoreGambleSuccessRate(inARow: number): number {
