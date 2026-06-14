@@ -28,7 +28,7 @@ export function createCommands(config: AppConfig) {
       option
         .setName("점수")
         .setDescription(
-          `도박에 걸 점수입니다. (최소 ${config.scoreGamble.minimumBetScore}, 최대 보유 점수의 ${formatPercent(
+          `도박에 걸 점수입니다. (최소 ${config.scoreGamble.minimumBetScore}, 최대 ${config.scoreGamble.minimumBetScore * 2} 또는 보유 점수의 ${formatPercent(
             config.scoreGamble.maximumBetScoreRate,
           )})`,
         )

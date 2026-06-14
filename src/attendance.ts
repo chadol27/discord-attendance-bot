@@ -198,7 +198,7 @@ async function handleScoreGambleCommand(interaction: ChatInputCommandInteraction
 function calculateMaximumScoreGambleBetScore(score: number, config: AppConfig): number {
   const { minimumBetScore, maximumBetScoreRate } = config.scoreGamble;
 
-  return Math.max(minimumBetScore, Math.round(score * maximumBetScoreRate));
+  return Math.max(minimumBetScore * 2, Math.floor(score * maximumBetScoreRate));
 }
 
 function calculateScoreGambleSuccessRate(inARow: number, config: AppConfig): number {
